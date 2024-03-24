@@ -1,0 +1,7 @@
+Playlist Link : https://www.youtube.com/playlist?list=PLC3y8-rFHvwh-K9mDlrrcDywl7CeVL2rO
+
+1. React Material UI Tutorial - 1 - Introduction
+    - https://youtu.be/BHEPVdfBAqE?si=MzCOnMvbttbNlAaY
+
+2. React Material UI Tutorial - 2 - Getting Started
+    - https://youtu.be/Qa5OLlG1kog?si=7pfS8LnddDHW6CCv
