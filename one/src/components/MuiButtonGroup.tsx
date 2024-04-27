@@ -10,6 +10,7 @@ const MuiButtonGroup = () => {
           <Button variant="contained">Center</Button>
           <Button variant="contained">Right</Button>
         </Stack>
+        
         {/* using button group */}
         <Stack direction="row">
           <ButtonGroup variant="contained">

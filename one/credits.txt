@@ -14,3 +14,6 @@ Playlist Link : https://www.youtube.com/playlist?list=PLC3y8-rFHvwh-K9mDlrrcDywl
 
 5. React Material UI Tutorial - 5 - Button Group
     - https://youtu.be/gsa2d8mLxB0?si=fapUTEXbEYQ7JXDv
+
+6. React Material UI Tutorial - 6 - Toggle Button
+    - https://youtu.be/aOZv5mXMxWI?si=g_HuxzzG2VojVTQo

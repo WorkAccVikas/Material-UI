@@ -4,7 +4,7 @@ import SendIcon from "@mui/icons-material/Send";
 const MuiButton = () => {
   return (
     <>
-      // NOTE : stack default flex is column
+      {/* NOTE : stack default flex is column */}
       <Stack spacing={4}>
         <Stack direction="row" spacing={2}>
           {/* variant prop : default = text */}
@@ -86,8 +86,11 @@ const MuiButton = () => {
           </IconButton>
         </Stack>
       </Stack>
+      
       {/* full width button */}
-      <Button variant="contained" fullWidth>Full width button</Button>
+      <Button variant="contained" fullWidth>
+        Full width button
+      </Button>
     </>
   );
 };
