@@ -17,3 +17,6 @@ Playlist Link : https://www.youtube.com/playlist?list=PLC3y8-rFHvwh-K9mDlrrcDywl
 
 6. React Material UI Tutorial - 6 - Toggle Button
     - https://youtu.be/aOZv5mXMxWI?si=g_HuxzzG2VojVTQo
+
+7. React Material UI Tutorial - 7 - Text Field
+    - https://youtu.be/BS2hOxbXMgw?si=fngTER-KbP0wcSHc
