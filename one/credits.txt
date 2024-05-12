@@ -20,3 +20,6 @@ Playlist Link : https://www.youtube.com/playlist?list=PLC3y8-rFHvwh-K9mDlrrcDywl
 
 7. React Material UI Tutorial - 7 - Text Field
     - https://youtu.be/BS2hOxbXMgw?si=fngTER-KbP0wcSHc
+
+8. React Material UI Tutorial - 8 - Select
+    - https://youtu.be/tKApfSoDPgM?si=7aHMsOB25dxWkYgn
