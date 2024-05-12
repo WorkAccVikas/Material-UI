@@ -20,3 +20,6 @@
 
 7. Add Following : 
     - Learn Select using TextField
+
+8. Add Following : 
+    - Learn Select using Select
