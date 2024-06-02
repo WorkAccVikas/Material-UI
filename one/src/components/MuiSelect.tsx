@@ -75,6 +75,12 @@ const MuiSelect = () => {
           </FormControl>
         </Box>
       </Stack>
+
+      <div
+        style={{
+          fontSize: "10px",
+        }}
+      ></div>
     </>
   );
 };

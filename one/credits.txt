@@ -23,3 +23,9 @@ Playlist Link : https://www.youtube.com/playlist?list=PLC3y8-rFHvwh-K9mDlrrcDywl
 
 8. React Material UI Tutorial - 8 - Select
     - https://youtu.be/tKApfSoDPgM?si=7aHMsOB25dxWkYgn
+
+9. React Material UI Tutorial - 9 - Radio Button
+    - https://youtu.be/RtOkdnKB9_E?si=kqSC99BYhD9P936f
+
+10. React Material UI Tutorial - 10 - Checkbox
+    - https://youtu.be/9L0QhB-6xBI?si=o8yoBDtsdTvOwDh_
