@@ -8,6 +8,7 @@ import { Button, TextField } from "@mui/material";
 import SearchInput2 from "./Select5";
 import SearchInput6 from "./Select6";
 import SearchInput7 from "./Select7";
+import SearchInput8 from "./Select8";
 
 const partiallyMatchedOptions = [
   {
@@ -120,7 +121,7 @@ const MyForm = () => {
               formattedItem={{ title: "company_name", id: "_id" }}
             /> */}
 
-            <SearchInput7
+            {/* <SearchInput7
               label="Company 7"
               searchUrl="https://billing.mydigitick.com/api/v1/company/getCompanyByName" // Replace with your actual API endpoint
               setFieldValue={setFieldValue}
@@ -131,7 +132,36 @@ const MyForm = () => {
               formattedItem={{ title: "company_name", id: "_id" }}
               // defaultOptions={partiallyMatchedOptions}
               defaultOptions={exactMatchedOptions}
+            /> */}
+            <SearchInput8
+              label="Company 8"
+              searchUrl="https://billing.mydigitick.com/api/v1/company/getCompanyByName" // Replace with your actual API endpoint
+              setFieldValue={setFieldValue}
+              name="companyID" // Field name for the company ID
+              onAddNew={handleAddNew}
+              // debounceDelay={20000}
+              additionalParams={{ limit: 5 }}
+              formattedItem={{ title: "company_name", id: "_id" }}
+              // defaultOptions={partiallyMatchedOptions}
+              defaultOptions={exactMatchedOptions}
+              searchPlaceholder="Search by company name"
+              noResultsText="No company found"
             />
+
+            {/* <SearchInput9
+              label="Company 9"
+              searchUrl="https://billing.mydigitick.com/api/v1/company/getCompanyByName" // Replace with your actual API endpoint
+              setFieldValue={setFieldValue}
+              name="companyID" // Field name for the company ID
+              onAddNew={handleAddNew}
+              // debounceDelay={20000}
+              additionalParams={{ limit: 5 }}
+              formattedItem={{ title: "company_name", id: "_id" }}
+              // defaultOptions={partiallyMatchedOptions}
+              defaultOptions={exactMatchedOptions}
+              searchPlaceholder="Search by company name"
+              noResultsText="No company found"
+            /> */}
             <Button type="submit" variant="contained">
               Submit
             </Button>

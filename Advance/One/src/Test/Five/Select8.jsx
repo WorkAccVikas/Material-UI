@@ -1,5 +1,11 @@
 import PropTypes from "prop-types";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import {
   TextField,
   Menu,
@@ -67,7 +73,7 @@ const formattedOptions = (options = [], formattedItem = {}) => {
   return result;
 };
 
-const SearchInput7 = ({
+const SearchInput8 = ({
   label,
   searchUrl,
   debounceDelay = 500,
@@ -78,8 +84,10 @@ const SearchInput7 = ({
   additionalParams = {}, // Additional parameters for the API call
   formattedItem,
   defaultOptions = [],
+  searchPlaceholder = "Type to search",
+  noResultsText = "No results found",
 }) => {
-  console.log("SearchInput7 rendered");
+  console.log("SearchInput8 rendered");
 
   const [inputValue, setInputValue] = useState("");
   //   const [options, setOptions] = useState([]);
@@ -97,6 +105,7 @@ const SearchInput7 = ({
       console.log(`🚀 ~ debounce ~ searchText:`, searchText);
       if (!searchText) {
         setOptions([]);
+        setFieldValue(name, "");
         return;
       }
 
@@ -156,101 +165,33 @@ const SearchInput7 = ({
   };
 
   // Handle option selection from dropdown
-  const handleSelect = (option, event) => {
-    event.stopPropagation(); // Prevent the click event from bubbling up
+  // Wrap handleSelect in useCallback
+  const handleSelect = useCallback(
+    (option, event) => {
+      event.stopPropagation(); // Prevent the click event from bubbling up
 
-    console.log(`🚀 ~ handleSelect ~ option:`, option);
-    setInputValue(option.title);
-    console.log("name", name);
-    console.log("option.id", option.id);
-    setFieldValue(name, option.id); // Set selected ID in Formik state
-    setOpen(false); // Close the dropdown after selection
-    setOptions([]);
-  };
+      console.log(`🚀 ~ handleSelect ~ option:`, option);
+      setInputValue(option.title);
+      console.log("name", name);
+      console.log("option.id", option.id);
+      setFieldValue(name, option.id); // Set selected ID in Formik state
+      setOpen(false); // Close the dropdown after selection
+      setOptions([]);
+    },
+    [setFieldValue, name]
+  );
 
-  const handleAddNew = (option, event) => {
-    event.stopPropagation(); // Prevent the click event from bubbling up
-    onAddNew(inputValue); // Trigger the add new action
-    setOpen(false); // Close the dropdown after adding new
-  };
+  // Wrap handleAddNew in useCallback to avoid recreating it unnecessarily
+  const handleAddNew = useCallback(
+    (option, event) => {
+      event.stopPropagation(); // Prevent the click event from bubbling up
+      onAddNew(inputValue); // Trigger the add new action
+      setOpen(false); // Close the dropdown after adding new
+    },
+    [inputValue, onAddNew]
+  );
 
   // Prepare menu items based on state
-  const renderMenuItems = () => {
-    const menuItems = [];
-
-    if (!inputValue && options.length === 0) {
-      menuItems.push(
-        <MenuItem key="type-to-search" disabled>
-          Type to search
-        </MenuItem>
-      );
-    } else if (!inputValue && options.length > 0 && defaultOptions.length > 0) {
-      options.forEach((option) => {
-        menuItems.push(
-          <MenuItem
-            key={option.id}
-            onMouseDown={(event) => handleSelect(option, event)} // Use onMouseDown
-          >
-            {option.title}
-          </MenuItem>
-        );
-      });
-    } else if (loading) {
-      menuItems.push(
-        <MenuItem key="loading" disabled>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ height: "100%", width: "100%" }}
-          >
-            <Typography>Loading...</Typography>
-            <CircularProgress size={24} />
-          </Stack>
-        </MenuItem>
-      );
-    } else {
-      if (options.length > 0) {
-        options.forEach((option) => {
-          menuItems.push(
-            <MenuItem
-              key={option.id}
-              onMouseDown={(event) => handleSelect(option, event)} // Use onMouseDown
-            >
-              {option.title}
-            </MenuItem>
-          );
-        });
-
-        // menuItems.push(
-        //   <MenuItem key="add-new" onMouseDown={(e) => handleAddNew(null, e)}>
-        //     <Button>Add New</Button>
-        //   </MenuItem>
-        // );
-      } else {
-        menuItems.push(
-          <MenuItem key="no-results" disabled>
-            No results found
-          </MenuItem>
-        );
-        if (inputValue) {
-          //   menuItems.push(
-          //     <MenuItem key="add-new" onMouseDown={(e) => handleAddNew(null, e)}>
-          //       <Button>Add New</Button>
-          //     </MenuItem>
-          //   );
-        }
-      }
-    }
-
-    menuItems.push(
-      <MenuItem key="add-new" onMouseDown={(e) => handleAddNew(null, e)}>
-        <Button>Add New</Button>
-      </MenuItem>
-    );
-
-    return menuItems;
-  };
 
   const handleClickOutside = (event) => {
     console.log("handleClickOutside");
@@ -276,6 +217,69 @@ const SearchInput7 = ({
       setFieldValue(name, value);
     }
   }, []);
+
+  const renderMenuItems = useCallback(() => {
+    console.log("renderMenuItems ....");
+    // If loading, directly return the loading state
+    if (loading) {
+      return (
+        <MenuItem key="loading" disabled>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ height: "100%", width: "100%" }}
+          >
+            <Typography>Loading...</Typography>
+            <CircularProgress size={24} />
+          </Stack>
+        </MenuItem>
+      );
+    }
+
+    // If there is no input and no options, return "Type to search"
+    if (!inputValue && options.length === 0) {
+      return (
+        <MenuItem key="type-to-search" disabled>
+          {searchPlaceholder}
+        </MenuItem>
+      );
+    }
+
+    // Render available options or show "No results found"
+    const renderOptions =
+      options.length > 0 ? (
+        options.map((option) => (
+          <MenuItem
+            key={option.id}
+            onMouseDown={(event) => handleSelect(option, event)}
+          >
+            {option.title}
+          </MenuItem>
+        ))
+      ) : (
+        <MenuItem key="no-results" disabled>
+          {noResultsText}
+        </MenuItem>
+      );
+
+    // Add new button (always rendered if not loading)
+    const renderAddNew = (
+      <MenuItem key="add-new" onMouseDown={(e) => handleAddNew(null, e)}>
+        <Button>Add New</Button>
+      </MenuItem>
+    );
+
+    return (
+      <>
+        {renderOptions}
+        {renderAddNew}
+      </>
+    );
+  }, [loading, inputValue, options, handleSelect, handleAddNew]);
+
+  // Use useMemo to cache the rendering of MenuItems to prevent unnecessary re-render
+  const memoizedMenuItems = useMemo(() => renderMenuItems(), [renderMenuItems]);
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
@@ -313,16 +317,16 @@ const SearchInput7 = ({
             overflowY: "auto",
           }}
         >
-          {renderMenuItems()}
+          {memoizedMenuItems}
         </Paper>
       )}
     </div>
   );
 };
 
-export default SearchInput7;
+export default SearchInput8;
 
-SearchInput7.propTypes = {
+SearchInput8.propTypes = {
   label: PropTypes.string.isRequired,
   searchUrl: PropTypes.string.isRequired,
   debounceDelay: PropTypes.number,
@@ -336,12 +340,12 @@ SearchInput7.propTypes = {
     title: PropTypes.string.isRequired, // Ensuring 'title' is a required string
   }).isRequired, // formattedItem itself is required
   defaultOptions: PropTypes.array,
+  searchPlaceholder: PropTypes.string,
+  noResultsText: PropTypes.string,
 };
 
 /** SUMMARY :
- * - SearchInput7 : bug fixes and improvements from SearchInput6
- * - it supports defaultOptions
- * - if defaultOptions.length === 1, it will set the inputValue and setFieldValue
- * - if defaultOptions.length > 1, it will not set the inputValue and setFieldValue
- *
+ * - SearchInput8 : bug fixes and improvements from SearchInput7
+ * - parent value is empty if already value and then clear from textfield
+ * - it supports searchPlaceholder, noResultsText
  */
