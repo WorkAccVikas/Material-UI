@@ -1,10 +1,10 @@
-import One from "./One";
-import Two from "./Two";
-import Three from "./Three";
-import Four from "./Four";
 import Five from "./Five";
-import Six from "./Six";
+import Four from "./Four";
+import One from "./One";
 import Seven from "./Seven";
+import Six from "./Six";
+import Three from "./Three";
+import Two from "./Two";
 
 const index = () => {
   return (
