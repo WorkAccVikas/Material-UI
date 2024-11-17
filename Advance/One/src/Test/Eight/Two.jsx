@@ -3,55 +3,117 @@ import {
   Button,
   CircularProgress,
   Grid,
+  Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
 } from "@mui/material";
 import axios from "axios";
-import { Form, FormikProvider, useFormik } from "formik";
-import { useEffect, useState } from "react";
+import { FieldArray, Form, FormikProvider, useFormik } from "formik";
+import { useEffect, useRef, useState } from "react";
 import ConfigurableAutocomplete1 from "../Seven/ConfigurableAutocomplete1";
 import * as Yup from "yup";
+import RateMasterTable from "./RateMasterTable";
+import MainCard from "../../components/MainCard";
 
 const token =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2Njc5NDRmZWQ5ZDY0ZTY0MmViZjkzYzIiLCJ1c2VyVHlwZSI6MSwiaWF0IjoxNzI5MjQ2Mzg2fQ.lNtgnKrDL79vP7lfsBJSoh09FhYU42YPyP_tle10b3k";
 
-const validationSchema = Yup.object({
-  vendorID: Yup.array()
-    .min(1, "At least one vendor should be selected")
-    .required("Vendor ID is required"),
-  companyID: Yup.array()
-    .min(1, "At least one company should be selected")
-    .required("Company ID is required"),
-  vehicleTypeID: Yup.array()
-    .min(1, "At least one vehicle type should be selected")
-    .required("Vehicle Type ID is required"),
-  rateData: Yup.array().of(
-    Yup.object({
-      _id: Yup.string().required("Vendor ID is required"),
-      company_name: Yup.string().required("Company name is required"),
-      effectiveDate: Yup.date()
-        .required("Effective Date is required")
-        .max(new Date(), "Effective Date cannot be in the future"),
-      // .nullable(),
-      billingCycle: Yup.string()
-        .required("Billing Cycle is required")
-        .oneOf(["25 days", "30 days", "45 days"], "Invalid billing cycle")
-        .nullable(),
-    })
-  ),
-});
+// const validationSchema = Yup.object({
+//   vendorID: Yup.array()
+//     .min(1, "At least one vendor should be selected")
+//     .required("Vendor ID is required"),
+//   companyID: Yup.array()
+//     .min(1, "At least one company should be selected")
+//     .required("Company ID is required"),
+//   vehicleTypeID: Yup.array()
+//     .min(1, "At least one vehicle type should be selected")
+//     .required("Vehicle Type ID is required"),
+//   rateData: Yup.array().of(
+//     Yup.object({
+//       _id: Yup.string().required("Vendor ID is required"),
+//       company_name: Yup.string().required("Company name is required"),
+//       effectiveDate: Yup.date()
+//         .required("Effective Date is required")
+//         .max(new Date(), "Effective Date cannot be in the future"),
+//       // .nullable(),
+//       billingCycle: Yup.string()
+//         .required("Billing Cycle is required")
+//         .oneOf(["25 days", "30 days", "45 days"], "Invalid billing cycle")
+//         .nullable(),
+//       rateMaster: Yup.array().of(
+//         Yup.object({
+//           zoneNameID: Yup.string().required("Zone Name is required"),
+//           zoneTypeID: Yup.string().required("Zone Type is required"),
+//           guard: Yup.number()
+//             .required("Guard is required")
+//             .typeError("Guard must be a valid number"),
+//           guardPrice: Yup.number()
+//             .required("Guard Price is required")
+//             .typeError("Guard Price must be a valid number")
+//             .min(0, "Guard Price must be a positive number"),
+//         })
+//       ),
+//     })
+//   ),
+// });
+
+const createDynamicValidationSchema = (fields) => {
+  return fields?.reduce((schema, field) => {
+    schema[field.name] = Yup.number()
+      .required(`${field.label} is required`)
+      .typeError(`${field.label} must be a valid number`)
+      .min(0, `${field.label} must be a positive number`);
+    return schema;
+  }, {});
+};
 
 const formatDate = (dateString) => {
   // Convert the ISO 8601 date to YYYY-MM-DD
   return dateString ? new Date(dateString).toISOString().split("T")[0] : "";
 };
 
+const handleBlurWithDefaultValue = (event, formik, fieldName, defaultValue) => {
+  const value = event.target.value.trim(); // Trim to avoid spaces being considered empty
+  if (!value) {
+    formik.setFieldValue(fieldName, defaultValue); // Set default value
+  }
+};
+
+const initialDefaultColumns = [
+  "Zone Name",
+  "Zone Type",
+  "Guard",
+  "Guard Price",
+];
+
+const initialDefaultValuesForColumns = {
+  zoneNameID: "",
+  zoneTypeID: "",
+  guard: 0,
+  guardPrice: 0,
+};
 const Two = () => {
+  const [loading, setLoading] = useState(true);
+
   const [vendorList, setVendorList] = useState([]);
   const [companyList, setCompanyList] = useState([]);
   const [vehicleTypeList, setVehicleTypeList] = useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const columnsRef = useRef(initialDefaultColumns);
+  const initialDefaultValuesForColumnsRef = useRef(
+    initialDefaultValuesForColumns
+  );
+  const rateDataRef = useRef([]);
+
+  const newColumnRef = useRef(null);
+
+  console.log("rateDataRef: ", rateDataRef.current);
 
   useEffect(() => {
     console.log("Two component mounted");
@@ -124,6 +186,46 @@ const Two = () => {
     };
   }, []);
 
+  const validationSchema = Yup.object({
+    vendorID: Yup.array()
+      .min(1, "At least one vendor should be selected")
+      .required("Vendor ID is required"),
+    companyID: Yup.array()
+      .min(1, "At least one company should be selected")
+      .required("Company ID is required"),
+    vehicleTypeID: Yup.array()
+      .min(1, "At least one vehicle type should be selected")
+      .required("Vehicle Type ID is required"),
+    rateData: Yup.array().of(
+      Yup.object({
+        _id: Yup.string().required("Vendor ID is required"),
+        company_name: Yup.string().required("Company name is required"),
+        effectiveDate: Yup.date()
+          .required("Effective Date is required")
+          .max(new Date(), "Effective Date cannot be in the future"),
+        // .nullable(),
+        billingCycle: Yup.string()
+          .required("Billing Cycle is required")
+          .oneOf(["25 days", "30 days", "45 days"], "Invalid billing cycle")
+          .nullable(),
+        rateMaster: Yup.array().of(
+          Yup.object({
+            zoneNameID: Yup.string().required("Zone Name is required"),
+            zoneTypeID: Yup.string().required("Zone Type is required"),
+            guard: Yup.number()
+              .required("Guard is required")
+              .typeError("Guard must be a valid number"),
+            guardPrice: Yup.number()
+              .required("Guard Price is required")
+              .typeError("Guard Price must be a valid number")
+              .min(0, "Guard Price must be a positive number"),
+            ...createDynamicValidationSchema(newColumnRef.current), // Add dynamic keys here
+          })
+        ),
+      })
+    ),
+  });
+
   const formik = useFormik({
     initialValues: {
       vendorID: [],
@@ -153,26 +255,6 @@ const Two = () => {
     formik.setFieldValue("vendorID", selectedOptions);
   };
 
-  // const handleCompanyChange = (selectedOptions) => {
-  //   formik.setFieldValue("companyID", selectedOptions);
-
-  //   // "_id": "673747f2625e65ed39170463",
-  //   // "effectiveDate": "2024-09-05T00:00:00.000Z",
-  //   // "company_name": "12NovNewCompany69",
-  //   // "billingCycle": "15 days",
-  //   // "label": "12NovNewCompany69"
-
-  //   const newRateData = selectedOptions.map((company) => ({
-  //     _id: company._id,
-  //     effectiveDate: company.effectiveDate,
-  //     company_name: company.company_name,
-  //     billingCycle: company.billingCycle,
-  //     rateMaster: [],
-  //   }));
-
-  //   formik.setFieldValue("rateData", newRateData);
-  // };
-
   const updateRateData = (selectedOptions, currentRateData) => {
     const selectedCompanyIds = selectedOptions.map((company) => company._id);
     console.log(
@@ -194,6 +276,27 @@ const Two = () => {
 
       console.log(`🚀 ~ updateRateData ~ existingRate:`, existingRate);
 
+      const vehicleTypeIDs = formik.values.vehicleTypeID;
+
+      console.log(`🚀 ~ updateRateData ~ vehicleTypeIDs:`, vehicleTypeIDs);
+
+      const initialColumns = {
+        zoneNameID: "",
+        zoneTypeID: "",
+        guard: 0,
+        guardPrice: 0,
+      };
+
+      const updatedColumns = vehicleTypeIDs.reduce((acc, { columnName }) => {
+        return {
+          ...acc,
+          [columnName]: 0, // Dynamically add columnName with value 0
+          [`Dual ${columnName}`]: 0,
+        };
+      }, initialColumns);
+
+      console.log(`🚀 ~ Updated Columns:`, updatedColumns);
+
       return {
         _id: company._id,
         company_name: company.company_name,
@@ -204,6 +307,7 @@ const Two = () => {
           formatDate(company.effectiveDate) ||
           "",
         billingCycle: existingRate.billingCycle || company.billingCycle || "",
+        rateMaster: existingRate.rateMaster || [updatedColumns],
       };
     });
 
@@ -227,8 +331,49 @@ const Two = () => {
     formik.setFieldValue("companyID", selectedOptions);
   };
   const handleVehicleTypeChange = (selectedOptions) => {
+    console.log(
+      `🚀 ~ handleVehicleTypeChange ~ selectedOptions:`,
+      selectedOptions
+    );
+
+    const dynamicColumns = selectedOptions.map((item) => item.columnName);
+    console.log("IE = ", columnsRef.current);
+    const x = selectedOptions.map((item) => `Dual ${item.columnName}`);
+
+    columnsRef.current = [...initialDefaultColumns, ...dynamicColumns, ...x];
+    console.log("IE = ", columnsRef.current);
+
+    const updatedColumns = selectedOptions.reduce((acc, { columnName }) => {
+      return {
+        ...acc,
+        [columnName]: 0, // Dynamically add columnName with value 0
+        [`Dual ${columnName}`]: 0,
+      };
+    }, initialDefaultValuesForColumnsRef.current);
+
+    initialDefaultValuesForColumnsRef.current = updatedColumns;
+
+    console.log(
+      `🚀 ~ Updated Columns:`,
+      initialDefaultValuesForColumnsRef.current
+    );
+
+    // new columns stored in ref
+    const newColumns = selectedOptions.flatMap(({ columnName }) => [
+      { name: columnName, label: `Rate of ${columnName}` },
+      { name: `Dual ${columnName}`, label: `Dual Rate of ${columnName}` },
+    ]);
+
+    newColumnRef.current = newColumns;
+
     formik.setFieldValue("vehicleTypeID", selectedOptions);
   };
+
+  useEffect(() => {
+    console.log("rateData useEffect running");
+    console.log("rateData", formik.values.rateData);
+    rateDataRef.current = formik.values.rateData;
+  }, [formik.values.rateData]);
 
   const handleSelectChange = (field) => (selectedOptions) => {
     formik.setFieldValue(field, selectedOptions);
@@ -302,8 +447,8 @@ const Two = () => {
                 <ConfigurableAutocomplete1
                   id="vehicle-type-multiple-autocomplete"
                   options={vehicleTypeList}
-                  // onChange={handleVehicleTypeChange}
-                  onChange={handleSelectChange("vehicleTypeID")}
+                  onChange={handleVehicleTypeChange}
+                  // onChange={handleSelectChange("vehicleTypeID")}
                   label="Vehicle Types"
                   placeholder="Select your vehicle types"
                   selectAllLabel="Select All Vehicle Types"
@@ -324,81 +469,362 @@ const Two = () => {
 
             {/* 2nd row */}
             {/* <Box>2nd row</Box> */}
-            {formik.values.rateData.map((rate, index) => (
-              <Box
-                key={rate._id}
-                sx={{ border: "1px solid #ccc", padding: 2, marginBottom: 2 }}
-              >
-                <Grid container spacing={2}>
-                  <Grid item xs={3}>
-                    <TextField
-                      fullWidth
-                      label="Vendor"
-                      value={rate._id ? rate._id : ""}
-                      InputProps={{
-                        readOnly: true,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      fullWidth
-                      label="Company Name"
-                      value={rate.company_name ? rate.company_name : ""}
-                      InputProps={{
-                        readOnly: true,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      fullWidth
-                      label="Effective Date"
-                      type="date"
-                      value={formatDate(rate.effectiveDate)}
-                      onChange={(e) => {
-                        formik.setFieldValue(
-                          `rateData[${index}].effectiveDate`,
-                          e.target.value
-                        );
-                      }}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                      error={
-                        formik.touched.rateData?.[index]?.effectiveDate &&
-                        Boolean(formik.errors.rateData?.[index]?.effectiveDate)
-                      }
-                      helperText={
-                        formik.touched.rateData?.[index]?.effectiveDate &&
-                        formik.errors.rateData?.[index]?.effectiveDate
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      fullWidth
-                      label="Billing Cycle"
-                      value={rate.billingCycle || ""}
-                      onChange={(e) => {
-                        formik.setFieldValue(
-                          `rateData[${index}].billingCycle`,
-                          e.target.value
-                        );
-                      }}
-                      error={
-                        formik.touched.rateData?.[index]?.billingCycle &&
-                        Boolean(formik.errors.rateData?.[index]?.billingCycle)
-                      }
-                      helperText={
-                        formik.touched.rateData?.[index]?.billingCycle &&
-                        formik.errors.rateData?.[index]?.billingCycle
-                      }
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
-            ))}
+
+            {formik.values.rateData.length > 0 && (
+              <FieldArray name="rateData">
+                {({ insert, remove, push }) => (
+                  <Stack gap={2}>
+                    {formik.values.rateData.map((rateData, dataIndex) => (
+                      <MainCard
+                        key={dataIndex}
+                        title={`Rate Data ${dataIndex + 1} - ${
+                          rateData.company_name
+                        }`}
+                        secondary={
+                          <>
+                            <Stack gap={2} direction="row">
+                              <TextField
+                                fullWidth
+                                label="Effective Date"
+                                type="date"
+                                value={formatDate(rateData.effectiveDate)}
+                                onChange={(e) => {
+                                  formik.setFieldValue(
+                                    `rateData[${dataIndex}].effectiveDate`,
+
+                                    e.target.value
+                                  );
+                                }}
+                                InputLabelProps={{
+                                  shrink: true,
+                                }}
+                                error={
+                                  formik.touched.rateData?.[dataIndex]
+                                    ?.effectiveDate &&
+                                  Boolean(
+                                    formik.errors.rateData?.[dataIndex]
+                                      ?.effectiveDate
+                                  )
+                                }
+                                helperText={
+                                  formik.touched.rateData?.[dataIndex]
+                                    ?.effectiveDate &&
+                                  formik.errors.rateData?.[dataIndex]
+                                    ?.effectiveDate
+                                }
+                              />
+
+                              <TextField
+                                fullWidth
+                                label="Billing Cycle"
+                                value={rateData.billingCycle || ""}
+                                onChange={(e) => {
+                                  formik.setFieldValue(
+                                    `rateData[${dataIndex}].billingCycle`,
+
+                                    e.target.value
+                                  );
+                                }}
+                                error={
+                                  formik.touched.rateData?.[dataIndex]
+                                    ?.billingCycle &&
+                                  Boolean(
+                                    formik.errors.rateData?.[dataIndex]
+                                      ?.billingCycle
+                                  )
+                                }
+                                helperText={
+                                  formik.touched.rateData?.[dataIndex]
+                                    ?.billingCycle &&
+                                  formik.errors.rateData?.[dataIndex]
+                                    ?.billingCycle
+                                }
+                              />
+                            </Stack>
+                          </>
+                        }
+                      >
+                        {/* Table for Rate Master */}
+                        <TableContainer
+                          component={Paper}
+                          sx={{ marginBottom: 2 }}
+                        >
+                          <Table>
+                            <TableHead>
+                              <TableRow>
+                                {columnsRef.current?.map((column) => (
+                                  <TableCell key={column}>{column}</TableCell>
+                                ))}
+                                <TableCell>Actions</TableCell>
+                              </TableRow>
+                            </TableHead>
+
+                            <TableBody>
+                              <FieldArray
+                                name={`rateData[${dataIndex}].rateMaster`}
+                              >
+                                {({
+                                  insert: insertRate,
+                                  remove: removeRate,
+                                  push: pushRate,
+                                }) => {
+                                  return (
+                                    <>
+                                      {rateData.rateMaster.map(
+                                        (rate, rateIndex) => {
+                                          return (
+                                            <TableRow key={rateIndex}>
+                                              {/* Zone Name */}
+                                              <TableCell>
+                                                <TextField
+                                                  label="Zone"
+                                                  fullWidth
+                                                  name={`rateData[${dataIndex}].rateMaster[${rateIndex}].zoneNameID`}
+                                                  value={rate.zoneNameID}
+                                                  onChange={formik.handleChange}
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneNameID &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.zoneNameID
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneNameID &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneNameID
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              {/* Zone Type */}
+                                              <TableCell>
+                                                <TextField
+                                                  label="Zone Type"
+                                                  fullWidth
+                                                  name={`rateData[${dataIndex}].rateMaster[${rateIndex}].zoneTypeID`}
+                                                  value={rate.zoneTypeID}
+                                                  onChange={formik.handleChange}
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneTypeID &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.zoneTypeID
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneTypeID &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneTypeID
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              {/* Guard */}
+                                              <TableCell>
+                                                <TextField
+                                                  label="Guard"
+                                                  fullWidth
+                                                  name={`rateData[${dataIndex}].rateMaster[${rateIndex}].guard`}
+                                                  value={rate.guard}
+                                                  onChange={formik.handleChange}
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guard &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.guard
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guard &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guard
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              {/* Guard Price */}
+                                              <TableCell>
+                                                <TextField
+                                                  label="Guard Price"
+                                                  fullWidth
+                                                  // name={`rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`}
+                                                  value={rate.guardPrice}
+                                                  // onChange={formik.handleChange}
+                                                  // onChange={(e) => {
+                                                  //   const { value } = e.target;
+                                                  //   formik.setFieldValue(
+                                                  //     `rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`,
+                                                  //     value
+                                                  //   );
+                                                  // }}
+                                                  // onBlur={() => {
+                                                  //   const fieldName = `rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`;
+                                                  //   const currentValue =
+                                                  //     formik.values.rateData?.[
+                                                  //       dataIndex
+                                                  //     ]?.rateMaster?.[rateIndex]
+                                                  //       ?.guardPrice;
+                                                  //   if (!currentValue) {
+                                                  //     formik.setFieldValue(
+                                                  //       fieldName,
+                                                  //       0
+                                                  //     );
+                                                  //   }
+                                                  // }}
+
+                                                  {...formik.getFieldProps(
+                                                    `rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`
+                                                  )}
+                                                  onBlur={(e) =>
+                                                    handleBlurWithDefaultValue(
+                                                      e,
+                                                      formik,
+                                                      `rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`,
+                                                      0
+                                                    )
+                                                  }
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guardPrice &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.guardPrice
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guardPrice &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guardPrice
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              {/* Dynamic */}
+                                              {newColumnRef.current?.map(
+                                                (item, idx) => (
+                                                  <TableCell key={idx}>
+                                                    <TextField
+                                                      label={item.label}
+                                                      fullWidth
+                                                      name={`rateData[${dataIndex}].rateMaster[${rateIndex}].${item.name}`}
+                                                      value={
+                                                        rate[`${item.name}`]
+                                                      }
+                                                      onChange={
+                                                        formik.handleChange
+                                                      }
+                                                      error={
+                                                        formik.touched
+                                                          .rateData?.[dataIndex]
+                                                          ?.rateMaster?.[
+                                                          rateIndex
+                                                        ]?.[`${item.name}`] &&
+                                                        Boolean(
+                                                          formik.errors
+                                                            .rateData?.[
+                                                            dataIndex
+                                                          ]?.rateMaster?.[
+                                                            rateIndex
+                                                          ]?.[`${item.name}`]
+                                                        )
+                                                      }
+                                                      helperText={
+                                                        formik.touched
+                                                          .rateData?.[dataIndex]
+                                                          ?.rateMaster?.[
+                                                          rateIndex
+                                                        ]?.[`${item.name}`] &&
+                                                        formik.errors
+                                                          .rateData?.[dataIndex]
+                                                          ?.rateMaster?.[
+                                                          rateIndex
+                                                        ]?.[`${item.name}`]
+                                                      }
+                                                    />
+                                                  </TableCell>
+                                                )
+                                              )}
+                                            </TableRow>
+                                          );
+                                        }
+                                      )}
+
+                                      <TableRow>
+                                        {/* <TableCell colSpan={4}></TableCell> */}
+                                        <TableCell>
+                                          <Button
+                                            variant="outlined"
+                                            onClick={() => {
+                                              alert(`Add Rate = ${dataIndex}`);
+                                              // alert(
+                                              //   JSON.stringify(
+                                              //     initialDefaultValuesForColumnsRef,
+                                              //     null,
+                                              //     2
+                                              //   )
+                                              // );
+                                              pushRate(
+                                                initialDefaultValuesForColumnsRef.current
+                                              );
+                                            }}
+                                          >
+                                            Add Rate
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    </>
+                                  );
+                                }}
+                              </FieldArray>
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </MainCard>
+                    ))}
+                  </Stack>
+                )}
+              </FieldArray>
+            )}
 
             {/* 3rd row */}
             <Stack direction="row" gap={2} justifyContent="center">
