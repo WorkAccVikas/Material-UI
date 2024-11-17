@@ -100,12 +100,22 @@ const initialDefaultValuesForColumns = {
   guard: 0,
   guardPrice: 0,
 };
+
+const FIXED_COLUMN_COUNT = 5;
+
+const calculateMinWidth = (columnCount) => {
+  const widthPerColumn = 200; // Set a fixed width per column (adjust as needed)
+  return columnCount * widthPerColumn;
+};
+
 const Two = () => {
   const [loading, setLoading] = useState(true);
 
   const [vendorList, setVendorList] = useState([]);
   const [companyList, setCompanyList] = useState([]);
   const [vehicleTypeList, setVehicleTypeList] = useState([]);
+
+  const [columnCount, setColumnCount] = useState(FIXED_COLUMN_COUNT);
 
   const columnsRef = useRef(initialDefaultColumns);
   const initialDefaultValuesForColumnsRef = useRef(
@@ -476,6 +486,14 @@ const Two = () => {
 
       formik.setFieldValue("rateData", updatedExisted);
     }
+
+    if (reason === "selectOption") {
+      setColumnCount((p) => p + (selectedOptions.length || 0));
+    } else if (reason === "removeOption") {
+      setColumnCount((p) => p - 1);
+    } else if (reason === "clear") {
+      setColumnCount(FIXED_COLUMN_COUNT);
+    }
   };
 
   useEffect(() => {
@@ -655,42 +673,51 @@ const Two = () => {
                           </>
                         }
                       >
-                        {/* Table for Rate Master */}
-                        <TableContainer
-                          component={Paper}
-                          sx={{ marginBottom: 2 }}
-                        >
-                          <Table>
-                            <TableHead>
-                              <TableRow>
-                                {columnsRef.current?.map((column) => (
-                                  <TableCell key={column}>{column}</TableCell>
-                                ))}
-                                <TableCell>Actions</TableCell>
-                              </TableRow>
-                            </TableHead>
+                        <FieldArray
+                          name={`rateData.${dataIndex}.rateMaster`}
+                          render={({
+                            insert: insertRate,
+                            remove: removeRate,
+                            push: pushRate,
+                          }) => {
+                            return (
+                              <Stack spacing={2}>
+                                <TableContainer
+                                  component={Paper}
+                                  sx={{ marginBottom: 2 }}
+                                >
+                                  <Table
+                                    sx={{
+                                      minWidth: calculateMinWidth(columnCount),
+                                    }}
+                                  >
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>#</TableCell>
+                                        {columnsRef.current?.map((column) => (
+                                          <TableCell key={column}>
+                                            {column}
+                                          </TableCell>
+                                        ))}
+                                        <TableCell>Actions</TableCell>
+                                      </TableRow>
+                                    </TableHead>
 
-                            <TableBody>
-                              <FieldArray
-                                name={`rateData[${dataIndex}].rateMaster`}
-                              >
-                                {({
-                                  insert: insertRate,
-                                  remove: removeRate,
-                                  push: pushRate,
-                                }) => {
-                                  return (
-                                    <>
+                                    <TableBody>
                                       {rateData.rateMaster.map(
                                         (rate, rateIndex) => {
                                           return (
                                             <TableRow key={rateIndex}>
+                                              <TableCell>
+                                                {rateIndex + 1}
+                                              </TableCell>
                                               {/* Zone Name */}
                                               <TableCell>
                                                 <TextField
                                                   label="Zone"
                                                   fullWidth
                                                   name={`rateData[${dataIndex}].rateMaster[${rateIndex}].zoneNameID`}
+                                                  title="Zone Name"
                                                   value={rate.zoneNameID}
                                                   onChange={formik.handleChange}
                                                   error={
@@ -724,6 +751,7 @@ const Two = () => {
                                                   label="Zone Type"
                                                   fullWidth
                                                   name={`rateData[${dataIndex}].rateMaster[${rateIndex}].zoneTypeID`}
+                                                  title="Zone Type"
                                                   value={rate.zoneTypeID}
                                                   onChange={formik.handleChange}
                                                   error={
@@ -757,6 +785,7 @@ const Two = () => {
                                                   label="Guard"
                                                   fullWidth
                                                   name={`rateData[${dataIndex}].rateMaster[${rateIndex}].guard`}
+                                                  title="Guard"
                                                   value={rate.guard}
                                                   onChange={formik.handleChange}
                                                   error={
@@ -789,6 +818,7 @@ const Two = () => {
                                                 <TextField
                                                   label="Guard Price"
                                                   fullWidth
+                                                  title="Guard Price"
                                                   // name={`rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`}
                                                   value={rate.guardPrice}
                                                   // onChange={formik.handleChange}
@@ -858,6 +888,268 @@ const Two = () => {
                                                       label={item.label}
                                                       fullWidth
                                                       name={`rateData[${dataIndex}].rateMaster[${rateIndex}].${item.name}`}
+                                                      title={item.label}
+                                                      value={
+                                                        rate[`${item.name}`]
+                                                      }
+                                                      onChange={
+                                                        formik.handleChange
+                                                      }
+                                                      error={
+                                                        formik.touched
+                                                          .rateData?.[dataIndex]
+                                                          ?.rateMaster?.[
+                                                          rateIndex
+                                                        ]?.[`${item.name}`] &&
+                                                        Boolean(
+                                                          formik.errors
+                                                            .rateData?.[
+                                                            dataIndex
+                                                          ]?.rateMaster?.[
+                                                            rateIndex
+                                                          ]?.[`${item.name}`]
+                                                        )
+                                                      }
+                                                      helperText={
+                                                        formik.touched
+                                                          .rateData?.[dataIndex]
+                                                          ?.rateMaster?.[
+                                                          rateIndex
+                                                        ]?.[`${item.name}`] &&
+                                                        formik.errors
+                                                          .rateData?.[dataIndex]
+                                                          ?.rateMaster?.[
+                                                          rateIndex
+                                                        ]?.[`${item.name}`]
+                                                      }
+                                                    />
+                                                  </TableCell>
+                                                )
+                                              )}
+
+                                              <TableCell>
+                                                <IconButton
+                                                  onClick={() => {
+                                                    removeRate(rateIndex);
+                                                  }}
+                                                  title={`Delete Rate ${
+                                                    rateIndex + 1
+                                                  } for ${
+                                                    rateData.company_name
+                                                  }`}
+                                                >
+                                                  <Trash color="red" />
+                                                </IconButton>
+                                              </TableCell>
+                                            </TableRow>
+                                          );
+                                        }
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+
+                                <Stack direction={"row"}>
+                                  <Button
+                                    variant="outlined"
+                                    onClick={() => {
+                                      pushRate(
+                                        initialDefaultValuesForColumnsRef.current
+                                      );
+                                    }}
+                                    title="Add Rate"
+                                  >
+                                    Add Rate
+                                  </Button>
+                                </Stack>
+                              </Stack>
+                            );
+                          }}
+                        />
+                        {/* Table for Rate Master (Second Way) */}
+                        {/* <TableContainer
+                          component={Paper}
+                          sx={{ marginBottom: 2 }}
+                        >
+                          <Table
+                            sx={{
+                              minWidth: calculateMinWidth(columnCount),
+                            }}
+                          >
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>#</TableCell>
+                                {columnsRef.current?.map((column) => (
+                                  <TableCell key={column}>{column}</TableCell>
+                                ))}
+                                <TableCell>Actions</TableCell>
+                              </TableRow>
+                            </TableHead>
+
+                            <TableBody>
+                              <FieldArray
+                                name={`rateData[${dataIndex}].rateMaster`}
+                              >
+                                {({
+                                  insert: insertRate,
+                                  remove: removeRate,
+                                  push: pushRate,
+                                }) => {
+                                  return (
+                                    <>
+                                      {rateData.rateMaster.map(
+                                        (rate, rateIndex) => {
+                                          return (
+                                            <TableRow
+                                              key={rateIndex}
+                                            >
+                                              <TableCell>
+                                                {rateIndex + 1}
+                                              </TableCell>
+                                              <TableCell>
+                                                <TextField
+                                                  label="Zone"
+                                                  fullWidth
+                                                  name={`rateData[${dataIndex}].rateMaster[${rateIndex}].zoneNameID`}
+                                                  value={rate.zoneNameID}
+                                                  onChange={formik.handleChange}
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneNameID &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.zoneNameID
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneNameID &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneNameID
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              <TableCell>
+                                                <TextField
+                                                  label="Zone Type"
+                                                  fullWidth
+                                                  name={`rateData[${dataIndex}].rateMaster[${rateIndex}].zoneTypeID`}
+                                                  value={rate.zoneTypeID}
+                                                  onChange={formik.handleChange}
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneTypeID &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.zoneTypeID
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneTypeID &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.zoneTypeID
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              <TableCell>
+                                                <TextField
+                                                  label="Guard"
+                                                  fullWidth
+                                                  name={`rateData[${dataIndex}].rateMaster[${rateIndex}].guard`}
+                                                  value={rate.guard}
+                                                  onChange={formik.handleChange}
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guard &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.guard
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guard &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guard
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              <TableCell>
+                                                <TextField
+                                                  label="Guard Price"
+                                                  fullWidth
+                                                  value={rate.guardPrice}
+                                                  {...formik.getFieldProps(
+                                                    `rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`
+                                                  )}
+                                                  onBlur={(e) =>
+                                                    handleBlurWithDefaultValue(
+                                                      e,
+                                                      formik,
+                                                      `rateData[${dataIndex}].rateMaster[${rateIndex}].guardPrice`,
+                                                      0
+                                                    )
+                                                  }
+                                                  error={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guardPrice &&
+                                                    Boolean(
+                                                      formik.errors.rateData?.[
+                                                        dataIndex
+                                                      ]?.rateMaster?.[rateIndex]
+                                                        ?.guardPrice
+                                                    )
+                                                  }
+                                                  helperText={
+                                                    formik.touched.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guardPrice &&
+                                                    formik.errors.rateData?.[
+                                                      dataIndex
+                                                    ]?.rateMaster?.[rateIndex]
+                                                      ?.guardPrice
+                                                  }
+                                                />
+                                              </TableCell>
+
+                                              {newColumnRef.current?.map(
+                                                (item, idx) => (
+                                                  <TableCell key={idx}>
+                                                    <TextField
+                                                      label={item.label}
+                                                      fullWidth
+                                                      name={`rateData[${dataIndex}].rateMaster[${rateIndex}].${item.name}`}
                                                       value={
                                                         rate[`${item.name}`]
                                                       }
@@ -911,19 +1203,10 @@ const Two = () => {
                                       )}
 
                                       <TableRow>
-                                        {/* <TableCell colSpan={4}></TableCell> */}
                                         <TableCell>
                                           <Button
                                             variant="outlined"
                                             onClick={() => {
-                                              // alert(`Add Rate = ${dataIndex}`);
-                                              // alert(
-                                              //   JSON.stringify(
-                                              //     initialDefaultValuesForColumnsRef,
-                                              //     null,
-                                              //     2
-                                              //   )
-                                              // );
                                               pushRate(
                                                 initialDefaultValuesForColumnsRef.current
                                               );
@@ -939,7 +1222,7 @@ const Two = () => {
                               </FieldArray>
                             </TableBody>
                           </Table>
-                        </TableContainer>
+                        </TableContainer> */}
                       </MainCard>
                     ))}
                   </Stack>
