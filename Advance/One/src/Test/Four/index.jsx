@@ -5,7 +5,7 @@ const index = () => {
   return (
     <>
       {/* <One /> */}
-      {/* <Two /> */}
+      <Two />
     </>
   );
 };

@@ -12,12 +12,12 @@ const index = () => {
     <>
       {/* <One /> */}
       {/* <Two /> */}
-      {/* <Three /> */}
+      <Three />
       {/* <Four /> */}
       {/* <Five /> */}
       {/* <Six /> */}
       {/* <Seven /> */}
-      <Eight/>
+      {/* <Eight/> */}
     </>
   );
 };

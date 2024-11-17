@@ -1,9 +1,11 @@
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 
 const Two = () => {
   const [count, setCount] = useState(0);
   const [city, setCity] = useState("Mumbai");
+  const [loading, setLoading] = useState(false); // Loading state for the heavy calculation button
+
   const workerRef = useRef(null);
 
   useEffect(() => {
@@ -26,12 +28,14 @@ const Two = () => {
 
   const handleCityChange = () => {
     if (workerRef.current) {
+      setLoading(true); // Start loading
       workerRef.current.postMessage("start");
 
       workerRef.current.onmessage = (event) => {
         if (event.data === "done") {
           const newCity = "Pune";
           setCity(newCity);
+          setLoading(false); // Stop loading
         }
       };
     }
@@ -57,6 +61,8 @@ const Two = () => {
             variant="contained"
             color="secondary"
             onClick={handleCityChange}
+            disabled={loading} // Disable button while loading
+            startIcon={loading && <CircularProgress size={16} />} // Show spinner
           >
             Heavy Calculation Button
           </Button>
