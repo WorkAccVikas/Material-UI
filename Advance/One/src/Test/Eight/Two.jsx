@@ -3,6 +3,7 @@ import {
   Button,
   CircularProgress,
   Grid,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -20,6 +21,7 @@ import ConfigurableAutocomplete1 from "../Seven/ConfigurableAutocomplete1";
 import * as Yup from "yup";
 import RateMasterTable from "./RateMasterTable";
 import MainCard from "../../components/MainCard";
+import { Trash } from "iconsax-react";
 
 const token =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2Njc5NDRmZWQ5ZDY0ZTY0MmViZjkzYzIiLCJ1c2VyVHlwZSI6MSwiaWF0IjoxNzI5MjQ2Mzg2fQ.lNtgnKrDL79vP7lfsBJSoh09FhYU42YPyP_tle10b3k";
@@ -330,17 +332,26 @@ const Two = () => {
     formik.setFieldValue("rateData", newRateData);
     formik.setFieldValue("companyID", selectedOptions);
   };
-  const handleVehicleTypeChange = (selectedOptions) => {
+  const handleVehicleTypeChange = (selectedOptions, reason) => {
+    console.log("IEE - ", reason);
+    console.log("BI = ", rateDataRef.current);
     console.log(
       `🚀 ~ handleVehicleTypeChange ~ selectedOptions:`,
       selectedOptions
     );
 
-    const dynamicColumns = selectedOptions.map((item) => item.columnName);
-    console.log("IE = ", columnsRef.current);
-    const x = selectedOptions.map((item) => `Dual ${item.columnName}`);
+    // const dynamicColumns = selectedOptions.map((item) => item.columnName);
+    // // console.log("IE = ", columnsRef.current);
+    // const x = selectedOptions.map((item) => `Dual ${item.columnName}`);
 
-    columnsRef.current = [...initialDefaultColumns, ...dynamicColumns, ...x];
+    // columnsRef.current = [...initialDefaultColumns, ...dynamicColumns, ...x];
+
+    const newArray = selectedOptions.flatMap((item) => [
+      item.columnName,
+      `${item.columnName} Dual`,
+    ]);
+    columnsRef.current = [...initialDefaultColumns, ...newArray];
+
     console.log("IE = ", columnsRef.current);
 
     const updatedColumns = selectedOptions.reduce((acc, { columnName }) => {
@@ -353,10 +364,10 @@ const Two = () => {
 
     initialDefaultValuesForColumnsRef.current = updatedColumns;
 
-    console.log(
-      `🚀 ~ Updated Columns:`,
-      initialDefaultValuesForColumnsRef.current
-    );
+    // console.log(
+    //   `🚀 ~ Updated Columns:`,
+    //   initialDefaultValuesForColumnsRef.current
+    // );
 
     // new columns stored in ref
     const newColumns = selectedOptions.flatMap(({ columnName }) => [
@@ -367,6 +378,104 @@ const Two = () => {
     newColumnRef.current = newColumns;
 
     formik.setFieldValue("vehicleTypeID", selectedOptions);
+
+    if (reason === "clear") {
+      console.log("clear running ...........");
+      // Function to process the `rateMaster` data based on `x`
+      const processData = (existed, x) => {
+        return existed.map((item) => {
+          item.rateMaster = item.rateMaster.map((rate) => {
+            if (x.length === 0) {
+              // If `x` is empty, retain only zoneNameID, zoneTypeID, guard, and guardPrice
+              const filteredRate = Object.keys(rate).reduce((acc, key) => {
+                if (
+                  ["zoneNameID", "zoneTypeID", "guard", "guardPrice"].includes(
+                    key
+                  )
+                ) {
+                  acc[key] = rate[key];
+                }
+                return acc;
+              }, {});
+              return filteredRate;
+            } else {
+              // Retain keys based on `columnName` from `x`, including "Dual" keys
+              const allowedKeys = x
+                .map((xItem) => [xItem.columnName, `Dual ${xItem.columnName}`])
+                .flat();
+              const filteredRate = Object.keys(rate).reduce((acc, key) => {
+                if (
+                  allowedKeys.includes(key) ||
+                  ["zoneNameID", "zoneTypeID", "guard", "guardPrice"].includes(
+                    key
+                  )
+                ) {
+                  acc[key] = rate[key];
+                }
+                return acc;
+              }, {});
+              return filteredRate;
+            }
+          });
+          return item;
+        });
+      };
+
+      // Run the function with the data
+      const result = processData(rateDataRef.current, selectedOptions);
+      formik.setFieldValue("rateData", result);
+    } else if (reason === "removeOption") {
+      console.log("remove running ................");
+      const allowedKeys = selectedOptions.flatMap((entry) => [
+        entry.columnName,
+        `Dual ${entry.columnName}`,
+      ]);
+
+      const updatedExisted = rateDataRef.current?.map((company) => ({
+        ...company,
+        rateMaster: company.rateMaster.map((rate) => {
+          // Retain only allowed keys in rateMaster
+          const filteredRate = {};
+          allowedKeys.forEach((key) => {
+            if (key in rate) {
+              filteredRate[key] = rate[key];
+            }
+          });
+          // Include original keys like zoneNameID, zoneTypeID, guard, guardPrice
+          filteredRate.zoneNameID = rate.zoneNameID;
+          filteredRate.zoneTypeID = rate.zoneTypeID;
+          filteredRate.guard = rate.guard;
+          filteredRate.guardPrice = rate.guardPrice;
+          return filteredRate;
+        }),
+      }));
+      formik.setFieldValue("rateData", updatedExisted);
+    } else if (reason === "selectOption") {
+      console.log("select running ................");
+
+      // Iterate over `existed` and update the `rateMaster` for each company based on `x`
+      const updatedExisted = rateDataRef.current.map((company) => {
+        return {
+          ...company,
+          rateMaster: company.rateMaster.map((rm) => {
+            selectedOptions.forEach((item) => {
+              // For each item in x, ensure the base and dual keys are updated or added
+              if (!rm.hasOwnProperty(item.columnName)) {
+                rm[item.columnName] = 0; // Add base key if missing
+              }
+              if (!rm.hasOwnProperty(`Dual ${item.columnName}`)) {
+                rm[`Dual ${item.columnName}`] = 0; // Add dual key if missing
+              }
+            });
+            return rm;
+          }),
+        };
+      });
+
+      console.log("updatedExisted", updatedExisted);
+
+      formik.setFieldValue("rateData", updatedExisted);
+    }
   };
 
   useEffect(() => {
@@ -447,7 +556,9 @@ const Two = () => {
                 <ConfigurableAutocomplete1
                   id="vehicle-type-multiple-autocomplete"
                   options={vehicleTypeList}
-                  onChange={handleVehicleTypeChange}
+                  onChange={(selectedOptions, reason) => {
+                    handleVehicleTypeChange(selectedOptions, reason);
+                  }}
                   // onChange={handleSelectChange("vehicleTypeID")}
                   label="Vehicle Types"
                   placeholder="Select your vehicle types"
@@ -784,6 +895,16 @@ const Two = () => {
                                                   </TableCell>
                                                 )
                                               )}
+
+                                              <TableCell>
+                                                <IconButton
+                                                  onClick={() => {
+                                                    removeRate(rateIndex);
+                                                  }}
+                                                >
+                                                  <Trash color="red" />
+                                                </IconButton>
+                                              </TableCell>
                                             </TableRow>
                                           );
                                         }
@@ -795,7 +916,7 @@ const Two = () => {
                                           <Button
                                             variant="outlined"
                                             onClick={() => {
-                                              alert(`Add Rate = ${dataIndex}`);
+                                              // alert(`Add Rate = ${dataIndex}`);
                                               // alert(
                                               //   JSON.stringify(
                                               //     initialDefaultValuesForColumnsRef,

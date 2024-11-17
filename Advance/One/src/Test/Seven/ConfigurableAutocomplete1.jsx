@@ -34,18 +34,18 @@ const ConfigurableAutocomplete1 = ({
     ? options
     : [{ _id: "all", label: selectAllLabel }, ...options];
 
-  const handleChange = (event, newValue) => {
+  const handleChange = (event, newValue, reason) => {
     if (newValue.some((item) => item._id === "all")) {
       if (selectedMovies.length !== options.length) {
         setSelectedMovies(options);
-        if (onChange) onChange(options);
+        if (onChange) onChange(options, reason);
       } else {
         setSelectedMovies([]);
-        if (onChange) onChange([]);
+        if (onChange) onChange([], reason);
       }
     } else {
       setSelectedMovies(newValue);
-      if (onChange) onChange(newValue);
+      if (onChange) onChange(newValue, reason);
     }
   };
 
