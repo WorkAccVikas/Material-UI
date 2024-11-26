@@ -1,0 +1,72 @@
+.table-container {
+  overflow-x: auto; /* Allows horizontal scrolling */
+  overflow-y: hidden; /* Prevent vertical scrolling if not needed */
+  white-space: nowrap; /* Prevent wrapping of table cells */
+  width: 100%; /* Ensures the container takes full width */
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%; /* Allows the table to stretch horizontally */
+  min-width: 1200px; /* Set a minimum width for horizontal scrolling */
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f4f4f4;
+  position: sticky;
+  top: 0; /* Keeps the header fixed on top */
+}
+
+/* Fix the first and second columns */
+th:nth-child(1),
+td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  background-color: #fff;
+  z-index: 2; /* Higher z-index to ensure visibility */
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  position: sticky;
+  left: 100px; /* Adjust this value to match the width of the first column */
+  background-color: #fff;
+  z-index: 1; /* Slightly lower z-index than the first column */
+}
+
+/* Fix the last and second-to-last columns */
+th:nth-last-child(1),
+td:nth-last-child(1) {
+  position: sticky;
+  right: 0;
+  background-color: #fff;
+  z-index: 2; /* Higher z-index for visibility */
+}
+
+th:nth-last-child(2),
+td:nth-last-child(2) {
+  position: sticky;
+  right: 100px; /* Adjust this value to match the width of the last column */
+  background-color: #fff;
+  z-index: 1; /* Slightly lower z-index than the last column */
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.search-input {
+  margin-bottom: 10px;
+  padding: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}

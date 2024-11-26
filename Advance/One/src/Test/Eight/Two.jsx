@@ -110,6 +110,11 @@ const calculateMinWidth = (columnCount) => {
 
 const Two = () => {
   const [loading, setLoading] = useState(true);
+  const [loading2, setLoading2] = useState(false); // State for loader
+  const [loadingStates, setLoadingStates] = useState([]); // Loader state for each `dataIndex`
+  const workers = {}; // Store Web Workers for each `dataIndex`
+
+  const workerRef = useRef(null);
 
   const [vendorList, setVendorList] = useState([]);
   const [companyList, setCompanyList] = useState([]);
@@ -126,6 +131,20 @@ const Two = () => {
   const newColumnRef = useRef(null);
 
   console.log("rateDataRef: ", rateDataRef.current);
+
+  useEffect(() => {
+    // Initialize the web worker
+    workerRef.current = new Worker(
+      new URL("./rateDataWorker.js", import.meta.url)
+    );
+
+    // Cleanup worker on unmount
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     console.log("Two component mounted");
@@ -334,13 +353,37 @@ const Two = () => {
     return [...updatedRateData];
   };
 
-  const handleCompanyChange = (selectedOptions) => {
-    // Merge the existing rateData with the newly updated rateData
-    const newRateData = updateRateData(selectedOptions, formik.values.rateData);
+  // const handleCompanyChange = (selectedOptions) => {
+  //   // Merge the existing rateData with the newly updated rateData
+  //   const newRateData = updateRateData(selectedOptions, formik.values.rateData);
 
-    // Update Formik state with the new rateData and selected companies
-    formik.setFieldValue("rateData", newRateData);
-    formik.setFieldValue("companyID", selectedOptions);
+  //   // Update Formik state with the new rateData and selected companies
+  //   formik.setFieldValue("rateData", newRateData);
+  //   formik.setFieldValue("companyID", selectedOptions);
+  // };
+
+  const handleCompanyChange = (selectedOptions) => {
+    if (!workerRef.current) return;
+
+    setLoading2(true); // Show loader
+
+    const workerData = {
+      selectedOptions,
+      currentRateData: formik.values.rateData,
+      vehicleTypeIDs: formik.values.vehicleTypeID,
+    };
+
+    workerRef.current.postMessage(workerData);
+
+    workerRef.current.onmessage = (event) => {
+      const newRateData = event.data;
+
+      // Update Formik state with the new rate data
+      formik.setFieldValue("rateData", newRateData);
+      formik.setFieldValue("companyID", selectedOptions);
+
+      setLoading2(false); // Hide loader
+    };
   };
   const handleVehicleTypeChange = (selectedOptions, reason) => {
     console.log("IEE - ", reason);
@@ -520,6 +563,8 @@ const Two = () => {
         <CircularProgress />
       </Box>
     );
+
+  if (loading2) return <>Loading 2 .............</>;
 
   return (
     <>

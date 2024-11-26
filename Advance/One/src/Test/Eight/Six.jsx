@@ -18,6 +18,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 
+// Validation schema using Yup
 const validationSchema = Yup.object({
   data: Yup.array().of(
     Yup.object({
@@ -39,6 +40,7 @@ const validationSchema = Yup.object({
   ),
 });
 
+// Initial form values
 const initialValues = {
   data: [
     {
@@ -55,10 +57,9 @@ const initialValues = {
   ],
 };
 
-const MyForm = () => {
-  const [loadingStates, setLoadingStates] = useState(
-    initialValues.data.map(() => false)
-  );
+const Six = () => {
+  const [loadingStates, setLoadingStates] = useState([]); // Loader state for each `dataIndex`
+  const workers = {}; // Store Web Workers for each `dataIndex`
 
   const formik = useFormik({
     initialValues,
@@ -68,52 +69,46 @@ const MyForm = () => {
     },
   });
 
-  // const handleAddRate = (pushRate, dataIndex) => {
-  //   const updatedLoadingStates = [...loadingStates];
-  //   updatedLoadingStates[dataIndex] = true;
-  //   setLoadingStates(updatedLoadingStates);
-
-  //   setTimeout(() => {
-  //     pushRate({ guard: 0, guardPrice: 0, zone: "" });
-  //     updatedLoadingStates[dataIndex] = false;
-  //     setLoadingStates(updatedLoadingStates);
-  //   }, 5000);
-  // };
-
   const handleAddRate = (pushRate, dataIndex) => {
-    // Set the loader for the specific data index
+    // Initialize the loader for the specific data index
     const updatedLoadingStates = [...loadingStates];
     updatedLoadingStates[dataIndex] = true;
     setLoadingStates(updatedLoadingStates);
 
-    // Simulate heavy calculation
-    const performHeavyCalculation = () => {
-      let result = 0;
-      for (let i = 0; i < 1e9; i++) {
-        result += i;
-      }
-      return result;
+    // Create a new Web Worker
+    const worker = new Worker(new URL("./heavyWorker.js", import.meta.url));
+
+    // Listen for the worker's message
+    worker.onmessage = () => {
+      // Stop the loader
+      const updatedStates = [...loadingStates];
+      updatedStates[dataIndex] = false;
+      setLoadingStates(updatedStates);
+
+      // Add a new rate
+      pushRate({ guard: 0, guardPrice: 0, zone: "" });
+
+      // Terminate the worker
+      worker.terminate();
+      delete workers[dataIndex];
     };
 
-    // Perform heavy calculation
-    performHeavyCalculation();
+    // Start the heavy calculation
+    worker.postMessage({ task: `HeavyTask_${dataIndex}` });
 
-    // Update state after calculation
-    updatedLoadingStates[dataIndex] = false;
-    setLoadingStates(updatedLoadingStates);
-
-    // Add a new rate
-    pushRate({ guard: 0, guardPrice: 0, zone: "" });
+    // Store the worker
+    workers[dataIndex] = worker;
   };
 
   return (
     <FormikProvider value={formik}>
       <form onSubmit={formik.handleSubmit}>
         <FieldArray name="data">
-          {({ insert, remove, push }) => (
+          {({ remove, push }) => (
             <div>
               {formik.values.data.map((dataItem, dataIndex) => (
                 <Box key={dataIndex} sx={{ marginBottom: 3 }}>
+                  {/* Card for Name and City */}
                   <Card variant="outlined" sx={{ marginBottom: 2 }}>
                     <CardContent>
                       <Typography variant="h6">Data {dataIndex + 1}</Typography>
@@ -152,6 +147,7 @@ const MyForm = () => {
                     </CardContent>
                   </Card>
 
+                  {/* Table for Rate Master */}
                   <TableContainer component={Paper} sx={{ marginBottom: 2 }}>
                     <Table>
                       <TableHead>
@@ -164,11 +160,7 @@ const MyForm = () => {
                       </TableHead>
                       <TableBody>
                         <FieldArray name={`data[${dataIndex}].rateMaster`}>
-                          {({
-                            insert: insertRate,
-                            remove: removeRate,
-                            push: pushRate,
-                          }) => (
+                          {({ push: pushRate }) => (
                             <>
                               {dataItem.rateMaster.map((rate, rateIndex) => (
                                 <TableRow key={rateIndex}>
@@ -244,15 +236,6 @@ const MyForm = () => {
                                       }
                                     />
                                   </TableCell>
-                                  <TableCell>
-                                    <Button
-                                      variant="outlined"
-                                      onClick={() => removeRate(rateIndex)}
-                                      color="error"
-                                    >
-                                      Remove Rate
-                                    </Button>
-                                  </TableCell>
                                 </TableRow>
                               ))}
                               <TableRow>
@@ -263,7 +246,6 @@ const MyForm = () => {
                                     onClick={() =>
                                       handleAddRate(pushRate, dataIndex)
                                     }
-                                    disabled={loadingStates[dataIndex]}
                                   >
                                     {loadingStates[dataIndex] ? (
                                       <CircularProgress size={20} />
@@ -279,36 +261,8 @@ const MyForm = () => {
                       </TableBody>
                     </Table>
                   </TableContainer>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Button
-                      variant="outlined"
-                      onClick={() => remove(dataIndex)}
-                      color="error"
-                    >
-                      Remove Data
-                    </Button>
-                  </Box>
                 </Box>
               ))}
-              <Button
-                variant="outlined"
-                onClick={() =>
-                  push({
-                    name: "",
-                    city: "",
-                    rateMaster: [{ guard: 0, guardPrice: 0, zone: "" }],
-                  })
-                }
-              >
-                Add Data
-              </Button>
             </div>
           )}
         </FieldArray>
@@ -321,4 +275,4 @@ const MyForm = () => {
   );
 };
 
-export default MyForm;
+export default Six;

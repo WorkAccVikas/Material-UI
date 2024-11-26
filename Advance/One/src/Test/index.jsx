@@ -5,19 +5,23 @@ import Four from "./Four";
 import Five from "./Five";
 import Six from "./Six";
 import Seven from "./Seven";
-import Eight from './Eight';
+import Eight from "./Eight";
+import Nine from "./Nine";
+import Ten from "./Ten";
 
 const index = () => {
   return (
     <>
       {/* <One /> */}
       {/* <Two /> */}
-      <Three />
+      {/* <Three /> */}
       {/* <Four /> */}
       {/* <Five /> */}
       {/* <Six /> */}
       {/* <Seven /> */}
       {/* <Eight/> */}
+      {/* <Nine /> */}
+      <Ten />
     </>
   );
 };
