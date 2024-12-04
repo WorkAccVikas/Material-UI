@@ -8,6 +8,7 @@ import Seven from "./Seven";
 import Eight from "./Eight";
 import Nine from "./Nine";
 import Ten from "./Ten";
+import Eleven from "./Eleven";
 
 const index = () => {
   return (
@@ -21,7 +22,8 @@ const index = () => {
       {/* <Seven /> */}
       {/* <Eight/> */}
       {/* <Nine /> */}
-      <Ten />
+      {/* <Ten /> */}
+      <Eleven />
     </>
   );
 };
