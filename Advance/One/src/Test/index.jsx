@@ -10,6 +10,8 @@ import Nine from "./Nine";
 import Ten from "./Ten";
 import Eleven from "./Eleven";
 import Twelve from "./Twelve";
+import Thirteen from "./Thirteen";
+import Fourteen from "./Fourteen";
 
 const index = () => {
   return (
@@ -25,7 +27,9 @@ const index = () => {
       {/* <Nine /> */}
       {/* <Ten /> */}
       {/* <Eleven /> */}
-      <Twelve />
+      {/* <Twelve /> */}
+      {/* <Thirteen /> */}
+      <Fourteen />
     </>
   );
 };
